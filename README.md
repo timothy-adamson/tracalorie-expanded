@@ -4,3 +4,5 @@
 
 * Search function which consumes the Edamam Food Database API
 * Ability to set target calories and see progress/completion
+
+![Tracalorie Screenshot](/Tracalorie.png)

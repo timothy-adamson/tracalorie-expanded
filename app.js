@@ -119,7 +119,13 @@ const UIController = (function(){
     caloriesInput: '#calories-input',
     goalInput: '#goal-input',
     totalCaloriesText: '#total-calories',
-    remainingText: '#remaining-text'
+    remainingText: '#remaining-text',
+    errorLabel: '#error-label'
+  }
+
+  const APIKeys = {
+    appID: '6efa4d5d',
+    appKey: '96c466cb78d34b4a4b2ba6c1368cbd4c'
   }
 
   //State Management
@@ -159,6 +165,42 @@ const UIController = (function(){
     return ((foodInput !== '' && caloriesInput !== '') ? true : false);
   }
 
+  const checkFoodEntry = () => {
+    const foodInput = document.querySelector(UISelectors.foodInput).value;
+
+    return ((foodInput !== '') ? true : false);
+  }
+
+  //Edamam DB search
+  const getSearchResult = async () => {
+    const input = document.querySelector(UISelectors.foodInput).value
+    fetch(
+      `https://api.edamam.com/api/food-database/parser?ingr=${encodeURIComponent(input)}&app_id=${APIKeys.appID}&app_key=${APIKeys.appKey}`
+    )
+    .then((res) => {
+      return res.json();
+    })
+    .then((json) => {
+      if (json.parsed.length > 0){
+        const calories = json.parsed[0].food.nutrients.ENERC_KCAL;
+        document.querySelector(UISelectors.caloriesInput).value = calories;
+      }
+      else{
+        displaySearchError(input);
+      }
+    });
+  }
+
+  const displaySearchError = (foodInput) => {
+    document.querySelector(UISelectors.searchBtn).classList.add('disabled');
+    document.querySelector(UISelectors.errorLabel).textContent = `\"${foodInput}\" not found in database`;
+    
+    setTimeout(() => {
+      document.querySelector(UISelectors.searchBtn).classList.remove('disabled');
+      document.querySelector(UISelectors.errorLabel).textContent = '';
+    }, 3000);
+  }
+
   //Update list generates items from foodList each time it is called
   //Eliminates need for removing/adding/editing items in UI as this is done in ItemCtrl
   const updateList = function(){
@@ -181,7 +223,7 @@ const UIController = (function(){
     const totalCalories = ItemController.logData().totalCalories;
     const goalCalories = ItemController.logData().goalCalories;
 
-    if (goalCalories !== 0){
+    if (goalCalories != null){
       document.querySelector(UISelectors.totalCaloriesText).textContent = `${totalCalories} / ${goalCalories}`;
       document.querySelector(UISelectors.remainingText).innerHTML =
       `Only ${goalCalories - totalCalories} calories to go!`;
@@ -206,7 +248,9 @@ const UIController = (function(){
     checkGoalValid: checkGoalValid,
     checkInputValid: checkInputValid,
     initState: initState,
-    editState: editState
+    editState: editState,
+    getSearchResult: getSearchResult,
+    checkFoodEntry: checkFoodEntry
   }
 
 })()
@@ -256,6 +300,27 @@ const App = (function(ItemController, UIController){
     document.querySelector(UISelectors.itemList).addEventListener('click',goToEdit);
     document.querySelector(UISelectors.setBtn).addEventListener('click',setGoal);
     document.querySelector(UISelectors.clearAll).addEventListener('click',clearAll);
+    document.querySelector(UISelectors.searchBtn).addEventListener('click', searchDB);
+    document.querySelector(UISelectors.foodInput).addEventListener('input', checkFoodEntry);
+  }
+
+  //Search from Edamam API
+  const checkFoodEntry = () => {
+    const searchBtn = document.querySelector(UIController.getSelectors.searchBtn);
+    //Enable search button on valid input
+    if (UIController.checkFoodEntry()){
+      if (searchBtn.className.includes('disabled')){
+        searchBtn.classList.remove('disabled');
+      }
+    }
+    else{
+      searchBtn.classList.add('disabled');
+    }
+  }
+
+  const searchDB = (e) => {
+    UIController.getSearchResult();
+    e.preventDefault();
   }
 
   //Adding items to list
