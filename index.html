@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <title>Calorie Tracker</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css">
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+  <script src="https://developer.edamam.com/attribution/badge.js"></script> 
+</head>
+<body>
+  <nav>
+    <div class="nav-wrapper orange darken-2">
+      <div class="container">
+      <a href="#" class="brand-logo center">Tracalorie</a>
+      <ul id="nav-mobile" class="right">
+        <li><a href="#" class="btn light-blue accent-3" id="clear-btn">Clear All</a></li>
+      </ul>
+      </div>
+    </div>
+  </nav>
+<br>
+  <div class="container">
+    <div class="card">
+      <div class="card-content">
+        <span class="card-title">Set your calorie goal</span>
+        <br>
+        <div class="row">
+          <div class="input-field col s10">
+            <input type="number" class="validate" id="goal-input" placeholder="Your goal calorie intake">
+            <label for="goal-input">Target Calories</label>
+          </div>
+          <div class="col s2">
+              <a href="#" class="btn pink waves-effect waves-light right" id="set-btn">Set</a>
+          </div>
+        </div>
+      </div>
+      <div class="card-content">
+        <span class="card-title">Add foods to start tracking</span>
+        <div id="edamam-badge" class="right"></div>
+        <br>
+        <div class="row">
+          <div class="col s12">
+            <div class="row">
+              <div class="input-field col s5">
+                <input type="text" class="validate" id="food-input" placeholder="Add food">
+                <label for="food-input">Food</label>
+              </div>
+              <div class="input-field col s5">
+                <input type="number" class="validate" id="calories-input" placeholder="Add calories">
+                <label for="food-input">Calories</label>
+              </div>
+              <div class="col s2">
+                  <a href="#" class="btn aqua waves-effect waves-light right" id="search-btn"><i class="material-icons">search</i>Search</a>
+              </div>
+            </div>
+            <a href="#" class="btn orange waves-effect waves-light" id="add-btn"><i class="material-icons">add</i>Add food</a>
+            <a href="#" class="btn green waves-effect waves-light" id="update-btn"><i class="material-icons">adjust</i> Update</a>
+            <a href="#" class="btn red waves-effect waves-light" id="remove-btn"><i class="material-icons">delete</i>Remove</a>
+            <a href="#" class="btn grey waves-effect waves-light right" id="back-btn"><i class="material-icons">arrow_back</i>Cancel</a>
+          </div>
+        </div>
+      </div>
+    </div>
+    <h3 class="center-align orange-text">Today's Calories:
+      <span id="total-calories">0</span>
+    </h3>
+    <br>
+    <table class="highlight" id="item-list">
+    </table>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
