@@ -8,6 +8,7 @@ const ItemController = (function(){
     foodList: [],
     currentItem: null,
     totalCalories: 0,
+    goalCalories: 0,
     lastId: 0 //Most recent ID added is cached to generate incremental IDs, regardless of removal of items
   }
 
@@ -20,7 +21,7 @@ const ItemController = (function(){
 
   //Add, edit and delete foods in foodList data structure
 
-  const add = function (){
+  const add = () => {
 
     name = document.querySelector(UIController.getSelectors.foodInput).value;
     calories = parseInt(document.querySelector(UIController.getSelectors.caloriesInput).value);
@@ -52,7 +53,11 @@ const ItemController = (function(){
     data.foodList.splice(editTarget,1);
   }
 
-  const updateTotalCalories = function(){
+  const setGoalCalories = () => {
+    data.goalCalories = parseInt(document.querySelector(UIController.getSelectors.goalInput).value);
+  }
+
+  const updateTotalCalories = () => {
     data.totalCalories = data.foodList.reduce((acc,item) => acc + (parseFloat(item.calories) || 0), 0)
   }
 
@@ -86,12 +91,14 @@ const ItemController = (function(){
     clearAll: function(){
       data.foodList = [];
       currentItem = null;
+      data.goalCalories = 0;
       data.totalCalories = 0;
     },
     getListIndex: (ID) => {
       return cycleFoodIDs(ID);
     },
-    updateTotalCalories: updateTotalCalories
+    updateTotalCalories: updateTotalCalories,
+    setGoalCalories: setGoalCalories
   }
 })();
 
@@ -106,10 +113,13 @@ const UIController = (function(){
     deleteBtn: '#remove-btn',
     backBtn: '#back-btn',
     searchBtn: '#search-btn',
+    setBtn: '#set-btn',
     clearAll: '#clear-btn',
     foodInput: '#food-input',
     caloriesInput: '#calories-input',
-    totalCaloriesText: '#total-calories'
+    goalInput: '#goal-input',
+    totalCaloriesText: '#total-calories',
+    remainingText: '#remaining-text'
   }
 
   //State Management
@@ -135,6 +145,12 @@ const UIController = (function(){
   }
 
   //UI Functionality
+  const checkGoalValid = () => {
+    const goalInput = document.querySelector(UISelectors.goalInput).value;
+
+    return ((goalInput !== '') ? true : false);
+  }
+
   const checkInputValid = () => {
 
     const foodInput = document.querySelector(UISelectors.foodInput).value;
@@ -163,13 +179,23 @@ const UIController = (function(){
 
   const updateTotalCalories = () => {
     const totalCalories = ItemController.logData().totalCalories;
+    const goalCalories = ItemController.logData().goalCalories;
 
-    document.querySelector(UISelectors.totalCaloriesText).textContent = totalCalories;
+    if (goalCalories !== 0){
+      document.querySelector(UISelectors.totalCaloriesText).textContent = `${totalCalories} / ${goalCalories}`;
+      document.querySelector(UISelectors.remainingText).innerHTML =
+      `Only ${goalCalories - totalCalories} calories to go!`;
+    }
+    else{
+      document.querySelector(UISelectors.totalCaloriesText).textContent = totalCalories;
+      document.querySelector(UISelectors.remainingText).innerHTML = '';
+    }
   }
 
   const clearInputs = () => {
     document.querySelector(UISelectors.foodInput).value = null;
     document.querySelector(UISelectors.caloriesInput).value = null;
+    document.querySelector(UISelectors.goalInput).value = null;
   }
 
   //Expose Functions
@@ -177,6 +203,7 @@ const UIController = (function(){
     updateList: updateList,
     updateTotal: updateTotalCalories,
     getSelectors: UISelectors,
+    checkGoalValid: checkGoalValid,
     checkInputValid: checkInputValid,
     initState: initState,
     editState: editState
@@ -190,15 +217,22 @@ const StorageController = (() => {
     if (localStorage.getItem('foods') !== null){
       ItemController.logData().foodList = JSON.parse(localStorage.getItem('foods'));
     }
+    if (localStorage.getItem('goal') !== null){
+      ItemController.logData().goalCalories = JSON.parse(localStorage.getItem('goal'))
+    }
   }
 
   const updateStorage = () => {
     localStorage.setItem('foods', JSON.stringify(ItemController.logData().foodList));
+    localStorage.setItem('goal', JSON.stringify(ItemController.logData().goalCalories));
   }
 
   const clearStorage = () => {
     if (localStorage.getItem('foods') !== null){
       localStorage.removeItem('foods');
+    }
+    if (localStorage.getItem('goal') !== null){
+      localStorage.removeItem('goal');
     }
   }
 
@@ -220,6 +254,7 @@ const App = (function(ItemController, UIController){
     document.querySelector(UISelectors.deleteBtn).addEventListener('click',itemDeleteSubmit);
     document.querySelector(UISelectors.backBtn).addEventListener('click',cancelEdit);
     document.querySelector(UISelectors.itemList).addEventListener('click',goToEdit);
+    document.querySelector(UISelectors.setBtn).addEventListener('click',setGoal);
     document.querySelector(UISelectors.clearAll).addEventListener('click',clearAll);
   }
 
@@ -235,10 +270,12 @@ const App = (function(ItemController, UIController){
   }
 
   //Editing existing items
+
+  let editTarget; //Using let variable persists the edit target for update/removal functions
   const goToEdit = (e) => {
     if (e.target.id === 'edit-btn'){
       const itemID = e.target.parentNode.parentNode.id.slice(5);
-      const editTarget = ItemController.getListIndex(itemID);
+      editTarget = ItemController.getListIndex(itemID);
 
       UIController.editState(editTarget);
     }
@@ -273,6 +310,14 @@ const App = (function(ItemController, UIController){
   const cancelEdit = (e) => {
     UIController.initState();
     editTarget = null;
+    e.preventDefault();
+  }
+
+  const setGoal = (e) => {
+    ItemController.setGoalCalories();
+    UIController.updateTotal();
+    StorageController.updateStorage();
+    e.preventDefault();
   }
 
   const clearAll = (e) => {
@@ -282,6 +327,7 @@ const App = (function(ItemController, UIController){
     UIController.initState();
     StorageController.clearStorage();
     editTarget = null;
+    e.preventDefault();
   }
 
   return{
