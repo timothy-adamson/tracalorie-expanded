@@ -1,17 +1,24 @@
+//This app uses the Module pattern, aiming to decouple UI and data functions
+
+//Item Controller handles foodList data structure and changes made to it
 const ItemController = (function(){
-  
+
+  //Data object stores 
   const data = {
     foodList: [],
     currentItem: null,
     totalCalories: 0,
-    lastId: 0
+    lastId: 0 //Most recent ID added is cached to generate incremental IDs, regardless of removal of items
   }
 
+  //Food constructor
   Food = function(id,name,calories){
     this.id = id,
     this.name = name,
     this.calories = calories
   }
+
+  //Add, edit and delete foods in foodList data structure
 
   const add = function (){
 
@@ -49,6 +56,8 @@ const ItemController = (function(){
     data.totalCalories = data.foodList.reduce((acc,item) => acc + (parseFloat(item.calories) || 0), 0)
   }
 
+  //Return the index of an item in foodList based on its ID, since they can differ due to removals
+  //This is used for setting an edit target
   const cycleFoodIDs = (targetID) => {
     for (i = 0; i < data.foodList.length; i++){
       if (data.foodList[i].id == targetID){
@@ -57,6 +66,7 @@ const ItemController = (function(){
     }
   }
 
+  //Expose functions
   return {
     add: function(){
       add();
@@ -85,9 +95,10 @@ const ItemController = (function(){
   }
 })();
 
-
+//UI Controller handles UI changes including state, list and form validation
 const UIController = (function(){
 
+  //UI Selectors provide a reference area for DOM elements whose ID's/classes may be changed
   const UISelectors = {
     itemList: '#item-list',
     addBtn: '#add-btn',
@@ -101,6 +112,29 @@ const UIController = (function(){
     totalCaloriesText: '#total-calories'
   }
 
+  //State Management
+  const initState = function(){
+    clearInputs();
+    document.querySelector(UISelectors.addBtn).style.display = 'inline-flex';
+    document.querySelector(UISelectors.updateBtn).style.display = 'none';
+    document.querySelector(UISelectors.deleteBtn).style.display = 'none';
+    document.querySelector(UISelectors.backBtn).style.display = 'none';
+    document.querySelector(UISelectors.searchBtn).classList.add('disabled');
+  }
+
+  const editState = function(editItemID){
+    const items = ItemController.logData().foodList;
+
+    document.querySelector(UISelectors.foodInput).value = items[editItemID].name;
+    document.querySelector(UISelectors.caloriesInput).value = items[editItemID].calories;
+
+    document.querySelector(UISelectors.addBtn).style.display = 'none';
+    document.querySelector(UISelectors.updateBtn).style.display = 'inline-flex';
+    document.querySelector(UISelectors.deleteBtn).style.display = 'inline-flex';
+    document.querySelector(UISelectors.backBtn).style.display = 'inline-flex';
+  }
+
+  //UI Functionality
   const checkInputValid = () => {
 
     const foodInput = document.querySelector(UISelectors.foodInput).value;
@@ -109,6 +143,8 @@ const UIController = (function(){
     return ((foodInput !== '' && caloriesInput !== '') ? true : false);
   }
 
+  //Update list generates items from foodList each time it is called
+  //Eliminates need for removing/adding/editing items in UI as this is done in ItemCtrl
   const updateList = function(){
 
     const items = ItemController.logData().foodList
@@ -136,27 +172,7 @@ const UIController = (function(){
     document.querySelector(UISelectors.caloriesInput).value = null;
   }
 
-  const initState = function(){
-    clearInputs();
-    document.querySelector(UISelectors.addBtn).style.display = 'inline-flex';
-    document.querySelector(UISelectors.updateBtn).style.display = 'none';
-    document.querySelector(UISelectors.deleteBtn).style.display = 'none';
-    document.querySelector(UISelectors.backBtn).style.display = 'none';
-    document.querySelector(UISelectors.searchBtn).classList.add('disabled');
-  }
-
-  const editState = function(editItemID){
-    const items = ItemController.logData().foodList;
-
-    document.querySelector(UISelectors.foodInput).value = items[editItemID].name;
-    document.querySelector(UISelectors.caloriesInput).value = items[editItemID].calories;
-
-    document.querySelector(UISelectors.addBtn).style.display = 'none';
-    document.querySelector(UISelectors.updateBtn).style.display = 'inline-flex';
-    document.querySelector(UISelectors.deleteBtn).style.display = 'inline-flex';
-    document.querySelector(UISelectors.backBtn).style.display = 'inline-flex';
-  }
-
+  //Expose Functions
   return{
     updateList: updateList,
     updateTotal: updateTotalCalories,
@@ -168,7 +184,7 @@ const UIController = (function(){
 
 })()
 
-
+//Storage Controller enables persistence to local storage
 const StorageController = (() => {
   const getStorage = () => {
     if (localStorage.getItem('foods') !== null){
@@ -193,6 +209,7 @@ const StorageController = (() => {
   }
 })()
 
+//App contains functional event logic including init
 const App = (function(ItemController, UIController){
 
   const loadEventListeners = function(){
@@ -206,6 +223,7 @@ const App = (function(ItemController, UIController){
     document.querySelector(UISelectors.clearAll).addEventListener('click',clearAll);
   }
 
+  //Adding items to list
   const itemAddSubmit = (e) => {
     if(UIController.checkInputValid()){
       ItemController.add();
@@ -216,14 +234,11 @@ const App = (function(ItemController, UIController){
     e.preventDefault();
   }
 
-  let editTarget;
-
+  //Editing existing items
   const goToEdit = (e) => {
     if (e.target.id === 'edit-btn'){
       const itemID = e.target.parentNode.parentNode.id.slice(5);
-      console.log(itemID);
-      console.log(ItemController.getListIndex(itemID));
-      editTarget = ItemController.getListIndex(itemID);
+      const editTarget = ItemController.getListIndex(itemID);
 
       UIController.editState(editTarget);
     }
